@@ -80,4 +80,35 @@ public class KafkaConsumerConfig {
         factory.setConsumerFactory(paymentHistoryConsumerFactory());
         return factory;
     }
+
+
+    // 배송 내역 기록 전용 ConsumerFactory
+    @Bean
+    public ConsumerFactory<String, PaymentCompletedEvent> deliveryConsumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootStrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "delivery-group");
+
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
+
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+
+        JacksonJsonDeserializer<PaymentCompletedEvent> deserializer = new JacksonJsonDeserializer<>(PaymentCompletedEvent.class);
+        deserializer.addTrustedPackages("com.example.kafkaredispractice.common.model.kafka.event");
+
+        return new DefaultKafkaConsumerFactory<>(
+                props,
+                new StringDeserializer(),
+                deserializer
+        );
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> deliveryKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(deliveryConsumerFactory());
+        return factory;
+    }
 }
