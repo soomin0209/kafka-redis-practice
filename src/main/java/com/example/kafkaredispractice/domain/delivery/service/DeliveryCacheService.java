@@ -49,7 +49,7 @@ public class DeliveryCacheService {
     public List<DeliveryResponse> findUserDeliveries(Long userId) {
         String userKey = USER_DELIVERY_KEY + userId;
 
-        Set<String> deliveryIdList = stringRedisTemplate.opsForZSet().reverseRangeByScore(userKey, 0, 19);
+        Set<String> deliveryIdList = stringRedisTemplate.opsForZSet().reverseRange(userKey, 0, 19);
 
         // 캐시에 없으면 DB 직접 조회
         if (deliveryIdList == null || deliveryIdList.isEmpty()) {
