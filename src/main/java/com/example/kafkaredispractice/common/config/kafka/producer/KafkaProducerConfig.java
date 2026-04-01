@@ -1,4 +1,4 @@
-package com.example.kafkaredispractice.common.config.kafka;
+package com.example.kafkaredispractice.common.config.kafka.producer;
 
 import com.example.kafkaredispractice.common.model.kafka.event.PaymentCompletedEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -17,7 +17,7 @@ import java.util.Map;
 
 @EnableKafka
 @Configuration
-public class KafkaProduceConfig {
+public class KafkaProducerConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootStrapServers;
