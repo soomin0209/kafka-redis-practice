@@ -20,27 +20,38 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootStrapServers;
 
-    // ConsumerFactory
-    @Bean
-    public ConsumerFactory<String, PaymentCompletedEvent> productRankingConsumerFactory() {
+    // 기본 Consumer 속성
+    private Map<String, Object> baseConsumerProps(String groupId) {
         Map<String, Object> props = new HashMap<>();
 
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootStrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "product-ranking-group");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
 
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
 
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
+        return props;
+    }
+
+    // 기본 ConsumerFactory
+    private ConsumerFactory<String, PaymentCompletedEvent> baseConsumerFactory(String groupId) {
         JacksonJsonDeserializer<PaymentCompletedEvent> deserializer = new JacksonJsonDeserializer<>(PaymentCompletedEvent.class);
         deserializer.addTrustedPackages("com.example.kafkaredispractice.common.model.kafka.event");
 
         return new DefaultKafkaConsumerFactory<>(
-                props,
+                baseConsumerProps(groupId),
                 new StringDeserializer(),
                 deserializer
         );
+    }
+
+
+    // 인기 상품 랭킹 전용 ConsumerFactory
+    @Bean
+    public ConsumerFactory<String, PaymentCompletedEvent> productRankingConsumerFactory() {
+        return baseConsumerFactory("product-ranking-group");
     }
 
     @Bean
@@ -54,24 +65,7 @@ public class KafkaConsumerConfig {
     // 결제 내역 기록 전용 ConsumerFactory
     @Bean
     public ConsumerFactory<String, PaymentCompletedEvent> paymentHistoryConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootStrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "payment-history-group");
-
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
-
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-
-        JacksonJsonDeserializer<PaymentCompletedEvent> deserializer = new JacksonJsonDeserializer<>(PaymentCompletedEvent.class);
-        deserializer.addTrustedPackages("com.example.kafkaredispractice.common.model.kafka.event");
-
-        return new DefaultKafkaConsumerFactory<>(
-                props,
-                new StringDeserializer(),
-                deserializer
-        );
+        return baseConsumerFactory("payment-history-group");
     }
 
     @Bean
@@ -85,24 +79,7 @@ public class KafkaConsumerConfig {
     // 배송 내역 기록 전용 ConsumerFactory
     @Bean
     public ConsumerFactory<String, PaymentCompletedEvent> deliveryConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootStrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "delivery-group");
-
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JacksonJsonDeserializer.class);
-
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-
-        JacksonJsonDeserializer<PaymentCompletedEvent> deserializer = new JacksonJsonDeserializer<>(PaymentCompletedEvent.class);
-        deserializer.addTrustedPackages("com.example.kafkaredispractice.common.model.kafka.event");
-
-        return new DefaultKafkaConsumerFactory<>(
-                props,
-                new StringDeserializer(),
-                deserializer
-        );
+        return baseConsumerFactory("delivery-group");
     }
 
     @Bean
