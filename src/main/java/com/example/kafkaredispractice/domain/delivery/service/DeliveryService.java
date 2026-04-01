@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DeliveryService {
 
     private final DeliveryRepository deliveryRepository;
+    private final DeliveryCacheService deliveryCacheService;
 
     @Transactional
     public void createDeliveryFromPayment(PaymentCompletedEvent event) {
@@ -21,5 +22,7 @@ public class DeliveryService {
         deliveryRepository.save(delivery);
 
         log.info("[Delivery DB] 배송 준비 생성 : orderId={}, status={}", delivery.getOrderId(), delivery.getStatus());
+
+        deliveryCacheService.cacheDelivery(delivery);
     }
 }
