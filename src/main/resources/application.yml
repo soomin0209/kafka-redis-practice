@@ -1,5 +1,8 @@
 spring:
   datasource:
+    hikari:
+      maximum-pool-size: 20 # default 10
+      minimum-idle: 20
     url: jdbc:mysql://localhost:3306/kafka_redis
     username: root
     password: 12345678
