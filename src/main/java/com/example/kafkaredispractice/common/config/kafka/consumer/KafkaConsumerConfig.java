@@ -84,7 +84,7 @@ public class KafkaConsumerConfig {
     ) {
         ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(paymentHistoryConsumerFactory());
-
+        factory.setConcurrency(3);
         factory.setCommonErrorHandler(commonErrorHandlerWithDLT);
 
         return factory;
