@@ -9,7 +9,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.CommonErrorHandler;
+import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
+import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +41,7 @@ public class KafkaConsumerConfig {
     }
 
     // 기본 ConsumerFactory
-    private ConsumerFactory<String, PaymentCompletedEvent> baseConsumerFactory(String groupId) {
+    private ConsumerFactory<String, PaymentCompletedEvent> buildConsumerFactory(String groupId) {
         JacksonJsonDeserializer<PaymentCompletedEvent> deserializer = new JacksonJsonDeserializer<>(PaymentCompletedEvent.class);
         deserializer.addTrustedPackages("com.example.kafkaredispractice.common.model.kafka.event");
 
@@ -51,13 +56,18 @@ public class KafkaConsumerConfig {
     // 인기 상품 랭킹 전용 ConsumerFactory
     @Bean
     public ConsumerFactory<String, PaymentCompletedEvent> productRankingConsumerFactory() {
-        return baseConsumerFactory("product-ranking-group");
+        return buildConsumerFactory("product-ranking-group");
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> productRankingKafkaListenerContainerFactory() {
+    public ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> productRankingKafkaListenerContainerFactory(
+            CommonErrorHandler commonErrorHandlerWithDLT
+    ) {
         ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(productRankingConsumerFactory());
+
+        factory.setCommonErrorHandler(commonErrorHandlerWithDLT);
+
         return factory;
     }
 
@@ -65,13 +75,18 @@ public class KafkaConsumerConfig {
     // 결제 내역 기록 전용 ConsumerFactory
     @Bean
     public ConsumerFactory<String, PaymentCompletedEvent> paymentHistoryConsumerFactory() {
-        return baseConsumerFactory("payment-history-group");
+        return buildConsumerFactory("payment-history-group");
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> paymentHistoryKafkaListenerContainerFactory() {
+    public ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> paymentHistoryKafkaListenerContainerFactory(
+            CommonErrorHandler commonErrorHandlerWithDLT
+    ) {
         ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(paymentHistoryConsumerFactory());
+
+        factory.setCommonErrorHandler(commonErrorHandlerWithDLT);
+
         return factory;
     }
 
@@ -79,13 +94,29 @@ public class KafkaConsumerConfig {
     // 배송 내역 기록 전용 ConsumerFactory
     @Bean
     public ConsumerFactory<String, PaymentCompletedEvent> deliveryConsumerFactory() {
-        return baseConsumerFactory("delivery-group");
+        return buildConsumerFactory("delivery-group");
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> deliveryKafkaListenerContainerFactory() {
+    public ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> deliveryKafkaListenerContainerFactory(
+            CommonErrorHandler commonErrorHandlerWithDLT
+    ) {
         ConcurrentKafkaListenerContainerFactory<String, PaymentCompletedEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(deliveryConsumerFactory());
+
+        factory.setCommonErrorHandler(commonErrorHandlerWithDLT);
+
         return factory;
+    }
+
+
+    // ErrorHandler
+    @Bean
+    public CommonErrorHandler commonErrorHandlerWithDLT(KafkaTemplate<String, PaymentCompletedEvent> paymentCompletedEventKafkaTemplate) {
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(paymentCompletedEventKafkaTemplate);
+
+        FixedBackOff backOff = new FixedBackOff(1000L, 2L);
+
+        return new DefaultErrorHandler(recoverer, backOff);
     }
 }

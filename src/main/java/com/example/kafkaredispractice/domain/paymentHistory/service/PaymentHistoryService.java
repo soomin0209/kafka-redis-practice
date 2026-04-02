@@ -17,6 +17,12 @@ public class PaymentHistoryService {
 
     @Transactional
     public void savePaymentHistory(PaymentCompletedEvent event) {
+        // 이미 처리된 paymentId는 재처리 X
+        if (paymentHistoryRepository.existsByPaymentId(event.paymentId())) {
+            log.info("[DB] 이미 처리된 결제 - 재처리 스킵 : paymentId={}", event.paymentId());
+            return;
+        }
+
         PaymentHistory paymentHistory = PaymentHistory.from(event);
         paymentHistoryRepository.save(paymentHistory);
 

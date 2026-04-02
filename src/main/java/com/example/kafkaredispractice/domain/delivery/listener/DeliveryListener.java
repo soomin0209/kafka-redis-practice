@@ -24,6 +24,12 @@ public class DeliveryListener {
     public void consume(PaymentCompletedEvent event) {
         log.info("[Delivery-Consumer] 결제 완료 이벤트 수신 : orderId={}, userId={}", event.orderId(), event.userId());
 
+        // 테스트용 : 특정 productId에 대해서는 일부러 예외 발생
+        if (event.productId() == 999L) {
+            log.info("[Delivery-Consumer] 테스트용 예외 발생 - productId=999");
+            throw new RuntimeException("테스트용 배송 에러");
+        }
+
         deliveryService.createDeliveryFromPayment(event);
     }
 }

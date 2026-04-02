@@ -19,6 +19,7 @@ public class PaymentHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(unique = true)
     private Long paymentId;
     private Long orderId;
     private Long productId;
